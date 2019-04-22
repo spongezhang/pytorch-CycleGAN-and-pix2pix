@@ -1,6 +1,9 @@
 from .base_model import BaseModel
 from . import networks
-
+import numpy as np
+import cv2
+import sys
+import os
 
 class TestModel(BaseModel):
     """ This TesteModel can be used to generate CycleGAN results for only one direction.
@@ -48,6 +51,14 @@ class TestModel(BaseModel):
         # assigns the model to self.netG_[suffix] so that it can be loaded
         # please see <BaseModel.load_networks>
         setattr(self, 'netG' + opt.model_suffix, self.netG)  # store netG in self.
+        
+
+        self.dataset_name = opt.name.split('_')[0] 
+        self.count = 0
+        try:
+            os.stat('./generated/{}/test/'.format(self.dataset_name))
+        except:
+            os.makedirs('./generated/{}/test/'.format(self.dataset_name))
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -63,6 +74,24 @@ class TestModel(BaseModel):
     def forward(self):
         """Run forward pass."""
         self.fake_B = self.netG(self.real_A)  # G(A)
+        data = self.fake_B.cpu().numpy()
+        data = np.transpose(data, (2, 3, 1, 0))
+        #data = data[:,:,:,0]
+        #for i in range(data.shape[2]):
+        #    image = data[:,:,:]
+        #    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+        #    image = image*255
+        #    image = image.astype(np.uint8)
+        #    cv2.imwrite('./color/all_{}.png'.format(i), image)
+
+        for i in range(data.shape[3]):
+            image = data[:,:,:,i]
+            image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+            image = image*255
+            image = image.astype(np.uint8)
+            image = image[...,::-1]
+            cv2.imwrite('./generated/{}/test/{:04d}.png'.format(self.dataset_name, self.count), image)
+            self.count+=1
 
     def optimize_parameters(self):
         """No optimization for test model."""

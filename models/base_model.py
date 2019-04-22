@@ -187,9 +187,15 @@ class BaseModel(ABC):
                 state_dict = torch.load(load_path, map_location=str(self.device))
                 if hasattr(state_dict, '_metadata'):
                     del state_dict._metadata
-
+                #print(state_dict.keys())
+                net_state_set = set(net.state_dict().keys())
+                #for key in net.state_dict().keys():
+                #    print(key, net.state_dict()[key].shape)
                 # patch InstanceNorm checkpoints prior to 0.4
                 for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
+                    if key not in net_state_set:
+                        state_dict.pop(key)
+                        continue
                     self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
                 net.load_state_dict(state_dict)
 
