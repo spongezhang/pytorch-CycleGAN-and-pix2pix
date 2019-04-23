@@ -76,12 +76,12 @@ class TestModel(BaseModel):
     def forward(self):
         """Run forward pass."""
         add_noise_set = set(['module.model.19.weight', 'module.model.22.weight', 'module.model.26.weight'])
-        noise_value = random.random()*0.1
+        noise_value = random.random()*0.07
         save_dict = {}
         for name, param in self.netG.named_parameters():
             if name in add_noise_set:
                 save_dict[name] = torch.tensor(param)
-                param.add_(torch.randn(param.size()).cuda() * noise_value)
+                param.add_(torch.rand(param.size()).cuda() * noise_value)
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
