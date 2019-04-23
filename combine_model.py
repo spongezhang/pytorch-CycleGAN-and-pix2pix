@@ -38,12 +38,12 @@ from tqdm import tqdm
 if __name__ == '__main__':
 
     model_path_1 = './checkpoints/summer2winter_yosemite_pretrained/latest_net_G.pth'
-    model_path_2 = './checkpoints/horse2zebra_pretrained/latest_net_G.pth'
-    save_model_path = './checkpoints/zebra2winter_pretrained/latest_net_G.pth'
+    model_path_2 = './checkpoints/cityscapes_photo2label_pretrained/latest_net_G.pth'
+    save_model_path = './checkpoints/zebra2cityphoto_pretrained/latest_net_G.pth'
     try:
-        os.stat('./checkpoints/zebra2winter_pretrained/')
+        os.stat('./checkpoints/zebra2cityphoto_pretrained/')
     except:
-        os.makedirs('./checkpoints/zebra2winter_pretrained/')
+        os.makedirs('./checkpoints/zebra2cityphoto_pretrained/')
     
     state_dict_1 = torch.load(model_path_1)
     state_dict_2 = torch.load(model_path_2)
@@ -56,6 +56,3 @@ if __name__ == '__main__':
     state_dict_2['model.26.bias'] = state_dict_1['model.26.bias']
     torch.save(state_dict_2, save_model_path)
 
-    #print(state_dict['model.19.weight'].numpy().shape)
-    #print(state_dict['model.22.weight'].numpy().shape)
-    #print(state_dict['model.26.weight'].numpy().shape)
