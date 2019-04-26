@@ -75,8 +75,10 @@ class TestModel(BaseModel):
 
     def forward(self):
         """Run forward pass."""
-        add_noise_set = set(['module.model.19.weight', 'module.model.22.weight', 'module.model.26.weight'])
-        noise_value = random.random()*0.07
+        #add_noise_set = set(['module.model.19.weight', 'module.model.22.weight', 'module.model.26.weight'])
+        add_noise_set = set(['module.model.19.weight', 'module.model.22.weight'])
+        #add_noise_set = set(['module.model.26.weight'])
+        noise_value = random.random()*0.05
         save_dict = {}
         for name, param in self.netG.named_parameters():
             if name in add_noise_set:
