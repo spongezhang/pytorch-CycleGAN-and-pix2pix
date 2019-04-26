@@ -40,10 +40,20 @@ if __name__ == '__main__':
     model_path_1 = './checkpoints/horse2zebra_pretrained/latest_net_G.pth'
     model_path_2 = './checkpoints/cityscapes_label2photo_pretrained/latest_net_G.pth'
 
+
     state_dict_1 = torch.load(model_path_1)
-    conv_1_1 = state_dict_1['model.19.weight'].numpy()
+    conv_1_1 = (state_dict_1['model.26.weight'].numpy()).copy()
     state_dict_2 = torch.load(model_path_2)
-    conv_2_1 = (state_dict_1['model.19.weight'].numpy()).copy()
+    conv_2_1 = (state_dict_2['model.26.weight'].numpy()).copy()
+
+    conv_1_1 = conv_1_1.transpose((1,0,2,3))
+    conv_2_1 = conv_2_1.transpose((1,0,2,3))
+
+    print(state_dict_1['model.19.weight'].numpy().shape)
+    print(state_dict_1['model.22.weight'].numpy().shape)
+    print(state_dict_1['model.26.weight'].numpy().shape)
+    print(conv_1_1.shape)
+    print(conv_2_1.shape)
 
     for i in range(conv_1_1.shape[0]):
         for j in range(conv_1_1.shape[1]):
@@ -52,12 +62,13 @@ if __name__ == '__main__':
 
     for i in range(conv_2_1.shape[0]):
         for j in range(conv_2_1.shape[1]):
-            conv_2_1[i,j,:,:] = conv_2_1[i,j,:,:]+np.random.rand(3, 3)*0.07
+            #conv_2_1[i,j,:,:] = conv_2_1[i,j,:,:]+np.random.rand(3, 3)*0.07
             sum_val = np.sqrt(np.sum(conv_2_1[i,j,:,:]*conv_2_1[i,j,:,:]))
             conv_2_1[i,j,:,:] = conv_2_1[i,j,:,:]/sum_val
     
     #sampled_channel = [0, 30, 50, 70, 100, 120]
-    sampled_channel = [0]
+    #sampled_channel = [0, 10, 20, 30, 40, 50, 60]
+    sampled_channel = [0,1,2]
     max_corr = np.zeros((conv_1_1.shape[0],len(sampled_channel)))
     for l in range(len(sampled_channel)):
         for k in tqdm(range(conv_1_1.shape[0])):
@@ -72,8 +83,5 @@ if __name__ == '__main__':
     #his = np.histogram(np.arange(4), bins=np.arange(5), density=True) 
     his = np.histogram(max_corr.flatten(), bins=np.linspace(0.8, 1.0, num=20))
     print(his)
-    #print(state_dict['model.19.weight'].numpy().shape)
-    #print(state_dict['model.22.weight'].numpy().shape)
-    #print(state_dict['model.26.weight'].numpy().shape)
     #print(state_dict['model.19.weight'].numpy()[0,0,:,:])
     
