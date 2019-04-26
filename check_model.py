@@ -48,6 +48,8 @@ if __name__ == '__main__':
 
     conv_1_1 = conv_1_1.transpose((1,0,2,3))
     conv_2_1 = conv_2_1.transpose((1,0,2,3))
+    for key in state_dict_1:
+        print(key)
 
     print(state_dict_1['model.19.weight'].numpy().shape)
     print(state_dict_1['model.22.weight'].numpy().shape)
