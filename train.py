@@ -54,14 +54,15 @@ if __name__ == '__main__':
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 save_result = total_iters % opt.update_html_freq == 0
-                #images = model.get_visuals()
-                #for j in range(images.shape[3]):
-                #    image = images[:,:,:,j]
-                #    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
-                #    image = image*255
-                #    image = image.astype(np.uint8)
-                #    image = image[...,::-1]
-                #    cv2.imwrite('./train_image/{:04d}_{:04d}.png'.format(epoch,epoch_iter), image)
+                images = model.get_visuals()
+                for j in range(images.shape[3]):
+                    image = images[:,:,:,j]
+                    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+                    image = image*255
+                    image = image.astype(np.uint8)
+                    image = image[...,::-1]
+                    cv2.imwrite('./train_image/{:04d}_{:04d}.png'.format(epoch,epoch_iter), image)
+                    break
                 #visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk

@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn import init
 import functools
 from torch.optim import lr_scheduler
-
+from torch.nn.init import kaiming_normal_, calculate_gain
 
 ###############################################################################
 # Helper Functions
@@ -109,7 +109,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return net
 
 
-def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', upsampling_type='transposed_conv', init_gain=0.02, gpu_ids=[]):
     """Create a generator
 
     Parameters:
@@ -139,7 +139,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
     if netG == 'resnet_9blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, upsampling_type=upsampling_type, n_blocks=9)
     elif netG == 'resnet_6blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6)
     elif netG == 'unet_128':
@@ -304,6 +304,75 @@ def cal_gradient_penalty(netD, real_data, fake_data, device, type='mixed', const
     else:
         return 0.0, None
 
+class PixelNormLayer(nn.Module):
+    """
+    Pixelwise feature vector normalization.
+    """
+    def __init__(self, eps=1e-8):
+        super(PixelNormLayer, self).__init__()
+        self.eps = eps
+    
+    def forward(self, x):
+        return x / torch.sqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(eps = %s)' % (self.eps)
+
+class WScaleLayer(nn.Module):
+    """
+    Applies equalized learning rate to the preceding layer.
+    """
+    def __init__(self, incoming):
+        super(WScaleLayer, self).__init__()
+        self.incoming = incoming
+        self.scale = (torch.mean(self.incoming.weight.data ** 2)) ** 0.5
+        self.incoming.weight.data.copy_(self.incoming.weight.data / self.scale)
+        self.scale=self.scale.cuda()
+        self.bias = None
+        if self.incoming.bias is not None:
+            self.bias = self.incoming.bias
+            self.incoming.bias = None
+
+    def forward(self, x):
+        x = self.scale*x
+        if self.bias is not None:
+            x += self.bias.view(1, self.bias.size()[0], 1, 1)
+        return x
+
+    def __repr__(self):
+        param_str = '(incoming = %s)' % (self.incoming.__class__.__name__)
+        return self.__class__.__name__ + param_str
+
+def he_init(layer, nonlinearity='conv2d', param=None):
+    nonlinearity = nonlinearity.lower()
+    if nonlinearity not in ['linear', 'conv1d', 'conv2d', 'conv3d', 'relu', 'leaky_relu', 'sigmoid', 'tanh']:
+        if not hasattr(layer, 'gain') or layer.gain is None:
+            gain = 0  # default
+        else:
+            gain = layer.gain
+    elif nonlinearity == 'leaky_relu':
+        assert param is not None, 'Negative_slope(param) should be given.'
+        gain = calculate_gain(nonlinearity, param)
+    else:
+        gain = calculate_gain(nonlinearity)
+    kaiming_normal_(layer.weight, a=gain)
+
+def G_conv(incoming, in_channels, out_channels, kernel_size, padding, nonlinearity, init, param=None, 
+        to_sequential=True, use_wscale=True, use_batchnorm=False, use_pixelnorm=True):
+    layers = incoming
+    layers += [nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=1, padding=padding)]
+    he_init(layers[-1], init, param)  # init layers
+    if use_wscale:
+        layers += [WScaleLayer(layers[-1])]
+    layers += [nonlinearity]
+    if use_batchnorm:
+        layers += [nn.BatchNorm2d(out_channels)]
+    if use_pixelnorm:
+        layers += [PixelNormLayer()]
+    if to_sequential:
+        return nn.Sequential(*layers)
+    else:
+        return layers
 
 class ResnetGenerator(nn.Module):
     """Resnet-based generator that consists of Resnet blocks between a few downsampling/upsampling operations.
@@ -311,7 +380,7 @@ class ResnetGenerator(nn.Module):
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
 
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, padding_type='reflect'):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, padding_type='reflect', upsampling_type='transposed_conv'):
         """Construct a Resnet-based generator
 
         Parameters:
@@ -348,16 +417,34 @@ class ResnetGenerator(nn.Module):
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         for i in range(n_downsampling):  # add upsampling layers
-            mult = 2 ** (n_downsampling - i)
-            model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-                                         kernel_size=3, stride=2,
-                                         padding=1, output_padding=1,
-                                         bias=use_bias),
-                      norm_layer(int(ngf * mult / 2)),
-                      nn.ReLU(True)]
-        model += [nn.ReflectionPad2d(3)]
-        model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
-        model += [nn.Tanh()]
+            if upsampling_type == 'transposed_conv':
+                mult = 2 ** (n_downsampling - i)
+                model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                             kernel_size=3, stride=2,
+                                             padding=1, output_padding=1,
+                                             bias=use_bias),
+                          norm_layer(int(ngf * mult / 2)),
+                          nn.ReLU(True)]
+
+            elif upsampling_type == 'nearest_neighbor':
+                mult = 2 ** (n_downsampling - i)
+                ic = ngf * mult
+                oc = int(ngf * mult / 2)
+                layers = [nn.Upsample(scale_factor=2, mode='nearest')]
+                negative_slope = 0.2
+                act = nn.LeakyReLU(negative_slope=negative_slope) 
+                iact = 'leaky_relu'
+                layers = G_conv(layers, ic, oc, 3, 1, act, iact, negative_slope, False, True, False, True)
+                net = G_conv(layers, oc, oc, 3, 1, act, iact, negative_slope, True, True, False, True)
+                model.append(net)
+
+        if upsampling_type == 'transposed_conv':
+            model += [nn.ReflectionPad2d(3)]
+            model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
+            model += [nn.Tanh()]
+        elif upsampling_type == 'nearest_neighbor':
+            model += [nn.Conv2d(ngf, output_nc, kernel_size=1, padding=0)]
+            model += [nn.Tanh()]
 
         self.model = nn.Sequential(*model)
 
