@@ -86,7 +86,8 @@ class TestModel(BaseModel):
 
         for i in range(data.shape[3]):
             image = data[:,:,:,i]
-            image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+            image = (image + 1.0)*0.5
+            #image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
             image = image*255
             image = image.astype(np.uint8)
             image = image[...,::-1]
