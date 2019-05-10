@@ -1,6 +1,7 @@
 from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_dataset
 from PIL import Image
+from PIL import ImageFilter
 import random
 
 
@@ -20,7 +21,6 @@ class SingleDataset(BaseDataset):
         self.A_paths = sorted(make_dataset(opt.dataroot, opt.max_dataset_size))
         input_nc = self.opt.output_nc if self.opt.direction == 'BtoA' else self.opt.input_nc
         self.transform = get_transform(opt, grayscale=(input_nc == 1))
-        self.resize_blur = opt.resize_blur
         self.load_size = opt.load_size
 
     def __getitem__(self, index):
@@ -35,14 +35,6 @@ class SingleDataset(BaseDataset):
         """
         A_path = self.A_paths[index]
         A_img = Image.open(A_path).convert('RGB')
-        if self.resize_blur: 
-            resize_flag = random.uniform(0.0,1.0)
-            if resize_flag<0.5:
-                random_size = random.uniform(0.5,1.0)
-                w, h = A_img.size
-                A_img = A_img.filter(ImageFilter.GaussianBlur(radius=0.5/random_size))
-                A_img = A_img.resize((int(w*random_size),int(h*random_size)), Image.BICUBIC)
-                A_img = A_img.resize((w,h), Image.BICUBIC)
         A = self.transform(A_img)
         return {'A': A, 'A_paths': A_path}
 

@@ -54,6 +54,25 @@ class BaseOptions():
         parser.add_argument('--load_iter', type=int, default='0', help='which iteration to load? if load_iter > 0, the code will load models by iter_[load_iter]; otherwise, the code will load models by [epoch]')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
+        
+        #from detector
+        parser.add_argument('--generator-dir', default='.//',
+                            help='folder to output log')
+        parser.add_argument('--log-dir', default='./splice_log/',
+                            help='folder to output log')
+        parser.add_argument('--train-batch-size', type=int, default=32, metavar='BS',
+                            help='input batch size for training (default: 1024)')
+        parser.add_argument('--test-batch-size', type=int, default=32, metavar='BST',
+                            help='input batch size for testing (default: 1024)')
+
+        # Device options
+        parser.add_argument('--smooth', action='store_true', default=False,
+                            help='enables CUDA training')
+        parser.add_argument('--fft', action='store_true', default=False,
+                            help='enables CUDA training')
+        parser.add_argument('--freq_mode', type=int, default=0, metavar='BST',
+                            help='input batch size for testing (default: 1024)')
+
         self.initialized = True
         return parser
 

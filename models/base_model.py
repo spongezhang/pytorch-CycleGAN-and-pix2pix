@@ -153,8 +153,12 @@ class BaseModel(ABC):
                 net = getattr(self, 'net' + name)
 
                 if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    torch.save(net.module.cpu().state_dict(), save_path)
-                    net.cuda(self.gpu_ids[0])
+                    if hasattr(net, 'module'):
+                        torch.save(net.module.cpu().state_dict(), save_path)
+                        net.cuda(self.gpu_ids[0])
+                    else:
+                        torch.save(net.cpu().state_dict(), save_path)
+                        net.cuda(self.gpu_ids[0])
                 else:
                     torch.save(net.cpu().state_dict(), save_path)
 
@@ -202,6 +206,29 @@ class BaseModel(ABC):
                         continue
                     self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
                 net.load_state_dict(state_dict)
+
+    def load_generators(self, save_dir, name, epoch):
+        """Load all the networks from the disk.
+
+        Parameters:
+            epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
+        """
+        load_filename = '%s_net_%s.pth' % (epoch, name)
+        load_path = os.path.join(save_dir, load_filename)
+        net = getattr(self, 'net' + name)
+        if isinstance(net, torch.nn.DataParallel):
+            net = net.module
+        print('loading the model from %s' % load_path)
+        state_dict = torch.load(load_path, map_location=str(self.device))
+        if hasattr(state_dict, '_metadata'):
+            del state_dict._metadata
+        net_state_set = set(net.state_dict().keys())
+        for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
+            if key not in net_state_set:
+                state_dict.pop(key)
+                continue
+            self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
+        net.load_state_dict(state_dict)
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture
