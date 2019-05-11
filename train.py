@@ -25,6 +25,7 @@ from models import create_model
 from util.visualizer import Visualizer
 import numpy as np
 import cv2
+import os
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -41,6 +42,10 @@ if __name__ == '__main__':
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
+        try:
+            os.stat('./{}/'.format(opt.write_dir))
+        except:
+            os.makedirs('./{}/'.format(opt.write_dir))
 
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
@@ -61,7 +66,7 @@ if __name__ == '__main__':
                     image = image*255
                     image = image.astype(np.uint8)
                     image = image[...,::-1]
-                    cv2.imwrite('./train_image/{:04d}_{:04d}.png'.format(epoch,epoch_iter), image)
+                    cv2.imwrite('./{}/{:04d}_{:04d}.png'.format(opt.write_dir, epoch,epoch_iter), image)
                     break
                 #visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
