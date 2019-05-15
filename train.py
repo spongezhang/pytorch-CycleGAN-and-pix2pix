@@ -27,6 +27,11 @@ import numpy as np
 import cv2
 import os
 
+def flatten(t):
+    t = t.reshape(1, -1)
+    t = t.squeeze()
+    return t
+
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
@@ -73,6 +78,9 @@ if __name__ == '__main__':
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
+                print(losses)
+                print(flatten(model.pred_real))
+                print(flatten(model.pred_fake))
                 #visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
                 #if opt.display_id > 0:
                     #visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
@@ -87,6 +95,5 @@ if __name__ == '__main__':
         #    print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
         #    model.save_networks('latest')
         #    model.save_networks(epoch)
-
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()                     # update learning rates at the end of every epoch.

@@ -21,7 +21,8 @@ class AutoProgGANModel(BaseModel):
         """
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['D_A', 'G_A', 'idt']
+        self.loss_names = ['D_A', 'G_A', 'idt', 'G']
+        #self.loss_names = ['D_A']
         # specify the images you want to save/display. The training/test scripts will call <BaseModel.get_current_visuals>
         visual_names = ['real_A', 'fake_A']
 
@@ -48,8 +49,10 @@ class AutoProgGANModel(BaseModel):
             self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)  # define GAN loss.
             self.criterionIdt = torch.nn.L1Loss()
             # initialize optimizers; schedulers will be automatically created by function <BaseModel.setup>.
-            self.optimizer_G = torch.optim.Adam(self.netG_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            self.optimizer_G = torch.optim.Adam(self.netG_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.99))
+            self.optimizer_D = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.99))
+            #self.optimizer_G = torch.optim.Adam(self.netG_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+            #self.optimizer_D = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
@@ -85,10 +88,15 @@ class AutoProgGANModel(BaseModel):
         """
         # Real
         pred_real = netD(real)
+        self.pred_real = pred_real
+
         loss_D_real = self.criterionGAN(pred_real, True)
+
         # Fake
         pred_fake = netD(fake.detach())
+        self.pred_fake = pred_fake
         loss_D_fake = self.criterionGAN(pred_fake, False)
+
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
@@ -105,8 +113,8 @@ class AutoProgGANModel(BaseModel):
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_A), True)
         
-        self.loss_idt = self.criterionIdt(self.fake_A, self.real_A)  * lambda_idt
-        self.loss_G = self.loss_G_A+self.loss_idt
+        self.loss_idt = self.criterionIdt(self.fake_A, self.real_A) 
+        self.loss_G = self.loss_G_A+self.loss_idt * lambda_idt
         self.loss_G.backward()
 
     def optimize_parameters(self):

@@ -85,9 +85,11 @@ class AutoGANModel(BaseModel):
         """
         # Real
         pred_real = netD(real)
+        self.pred_real = pred_real
         loss_D_real = self.criterionGAN(pred_real, True)
         # Fake
         pred_fake = netD(fake.detach())
+        self.pred_fake = pred_fake
         loss_D_fake = self.criterionGAN(pred_fake, False)
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
