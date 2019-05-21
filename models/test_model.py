@@ -83,14 +83,17 @@ class TestModel(BaseModel):
         #    image = image*255
         #    image = image.astype(np.uint8)
         #    cv2.imwrite('./color/all_{}.png'.format(i), image)
-
+        
         for i in range(data.shape[3]):
+            image_filename = self.image_paths[i]
+            write_filename = image_filename.split('/')[-1]
+            write_filename = write_filename.split('.')[0]
             image = data[:,:,:,i]
             image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
             image = image*255
             image = image.astype(np.uint8)
             image = image[...,::-1]
-            cv2.imwrite('./generated/{}/test/{:04d}.png'.format(self.dataset_name, self.count), image)
+            cv2.imwrite('./generated/{}/test/{}.png'.format(self.dataset_name, write_filename), image)
             self.count+=1
 
     def optimize_parameters(self):
