@@ -4,7 +4,7 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 import numpy as np
-
+import random
 
 class AutoProgGANModel(BaseModel):
     @staticmethod
@@ -85,14 +85,16 @@ class AutoProgGANModel(BaseModel):
         Return the discriminator loss.
         We also call loss_D.backward() to calculate the gradients.
         """
+        pos_x = random.randint(0,32)
+        pos_y = random.randint(0,32)
         # Real
-        pred_real = netD(real)
+        pred_real = netD(real[:,:,pos_y:(pos_y+224), pos_x:(pos_x+224)])
         self.pred_real = pred_real
 
         loss_D_real = self.criterionGAN(pred_real, True)
 
         # Fake
-        pred_fake = netD(fake.detach())
+        pred_fake = netD(fake.detach()[:,:,pos_y:(pos_y+224), pos_x:(pos_x+224)])
         self.pred_fake = pred_fake
         loss_D_fake = self.criterionGAN(pred_fake, False)
 
@@ -110,8 +112,10 @@ class AutoProgGANModel(BaseModel):
         lambda_idt = self.opt.lambda_identity
         lambda_gan = self.opt.lambda_gan
         """Calculate the loss for generators G_A and G_B"""
+        pos_x = random.randint(0,32)
+        pos_y = random.randint(0,32)
         # GAN loss D_A(G_A(A))
-        self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_A), True)
+        self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_A[:,:,pos_y:(pos_y+224), pos_x:(pos_x+224)]), True)
         
         self.loss_idt = self.criterionIdt(self.fake_A, self.real_A) 
         self.loss_G = self.loss_G_A*lambda_gan +self.loss_idt*lambda_idt

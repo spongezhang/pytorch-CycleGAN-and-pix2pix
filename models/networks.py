@@ -5,6 +5,8 @@ import functools
 from torch.optim import lr_scheduler
 from torch.nn.init import kaiming_normal_, calculate_gain
 import numpy as np
+from torchvision import models
+
 
 ###############################################################################
 # Helper Functions
@@ -92,7 +94,7 @@ def init_weights(net, init_type='normal', init_gain=0.02):
     net.apply(init_func)  # apply the initialization function <init_func>
 
 
-def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def init_net(net, model = 'resnet', init_type='normal', init_gain=0.02, gpu_ids=[]):
     """Initialize a network: 1. register CPU/GPU device (with multi-GPU support); 2. initialize the network weights
     Parameters:
         net (network)      -- the network to be initialized
@@ -106,7 +108,8 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
         assert(torch.cuda.is_available())
         net.to(gpu_ids[0])
         net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
-    init_weights(net, init_type, init_gain=init_gain)
+    if model is not 'resnet':
+        init_weights(net, init_type, init_gain=init_gain)
     return net
 
 
@@ -149,7 +152,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
-    return init_net(net, init_type, init_gain, gpu_ids)
+    return init_net(net, netG, init_type, init_gain, gpu_ids)
 
 
 def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[]):
@@ -192,10 +195,15 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     elif netD == 'pixel':     # classify if each pixel is real or fake
         net = PixelDiscriminator(input_nc, ndf, norm_layer=norm_layer)
     elif netD == 'pggan':     # classify if each pixel is real or fake
-        net = Discriminator(input_nc, mbstat_avg='all', resolution=256, fmap_max=512, fmap_base=8192, sigmoid_at_end=True)
+        net = Discriminator(input_nc, mbstat_avg='all', resolution=256, fmap_max=512, fmap_base=8192, sigmoid_at_end=False)
+    elif netD == 'resnet':     # classify if each pixel is real or fake
+        net = models.resnet34(pretrained=True)
+        num_ftrs = net.fc.in_features
+        net.fc = nn.Linear(num_ftrs, 1) #nn.Conv2d(in_channels=num_ftrs, out_channels=1, kernel_size=1, stride=1, padding=0) #
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % net)
-    return init_net(net, init_type, init_gain, gpu_ids)
+
+    return init_net(net, netD, init_type, init_gain, gpu_ids)
 
 
 ##############################################################################
