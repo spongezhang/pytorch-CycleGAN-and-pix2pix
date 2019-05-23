@@ -18,9 +18,6 @@ class TestOptions(BaseOptions):
         parser.add_argument('--num_test', type=int, default=50, help='how many test images to run')
 
         #from detector
-        parser.add_argument('--dataroot', type=str,
-                            default='../datasets/',
-                            help='path to dataset')
         parser.add_argument('--log-dir', default='../splice_log/',
                             help='folder to output log')
         parser.add_argument('--training-set', default= 'synthesized_journals_2_train',
@@ -37,15 +34,13 @@ class TestOptions(BaseOptions):
                             help='input batch size for testing (default: 1024)')
         parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                             help='learning rate (default: 0.1)')
-        parser.add_argument('--fliprot', type=str2bool, default=False,
+        parser.add_argument('--fliprot', type=bool, default=False,
                             help='turns on flip and 90deg rotation augmentation')
         parser.add_argument('--lr-decay', default=1e-6, type=float, metavar='LRD',
                             help='learning rate decay ratio (default: 1e-6')
         parser.add_argument('--wd', default=1e-4, type=float,
                             metavar='W', help='weight decay (default: 1e-4)')
         parser.add_argument('--optimizer', default='sgd', type=str,
-                            metavar='OPT', help='The optimizer to use (default: SGD)')
-        parser.add_argument('--model', default='cycle_gan', type=str,
                             metavar='OPT', help='The optimizer to use (default: SGD)')
         parser.add_argument('--freq_mode', type=int, default=0, metavar='BST',
                             help='input batch size for testing (default: 1024)')

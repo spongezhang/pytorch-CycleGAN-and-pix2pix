@@ -56,9 +56,13 @@ class TestModel(BaseModel):
         self.dataset_name = opt.name.split('_')[0] 
         self.count = 0
         try:
-            os.stat('./generated/{}/test/'.format(self.dataset_name))
+            os.stat('./generated/{}/real/'.format(self.dataset_name))
         except:
-            os.makedirs('./generated/{}/test/'.format(self.dataset_name))
+            os.makedirs('./generated/{}/real/'.format(self.dataset_name))
+        try:
+            os.stat('./generated/{}/fake/'.format(self.dataset_name))
+        except:
+            os.makedirs('./generated/{}/fake/'.format(self.dataset_name))
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -76,13 +80,13 @@ class TestModel(BaseModel):
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
-        #data = data[:,:,:,0]
-        #for i in range(data.shape[2]):
-        #    image = data[:,:,:]
-        #    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
-        #    image = image*255
-        #    image = image.astype(np.uint8)
-        #    cv2.imwrite('./color/all_{}.png'.format(i), image)
+        data = data[:,:,:,0]
+        for i in range(data.shape[2]):
+            image = data[:,:,:]
+            image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+            image = image*255
+            image = image.astype(np.uint8)
+            cv2.imwrite('./generated/{}/real/{:04d}.png'.format(i), image)
 
         for i in range(data.shape[3]):
             image = data[:,:,:,i]
@@ -91,7 +95,7 @@ class TestModel(BaseModel):
             image = image*255
             image = image.astype(np.uint8)
             image = image[...,::-1]
-            cv2.imwrite('./generated/{}/test/{:04d}.png'.format(self.dataset_name, self.count), image)
+            cv2.imwrite('./generated/{}/fake/{:04d}.png'.format(self.dataset_name, self.count), image)
             self.count+=1
 
     def optimize_parameters(self):
