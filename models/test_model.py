@@ -76,13 +76,13 @@ class TestModel(BaseModel):
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
-        #data = data[:,:,:,0]
-        #for i in range(data.shape[2]):
-        #    image = data[:,:,:]
-        #    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
-        #    image = image*255
-        #    image = image.astype(np.uint8)
-        #    cv2.imwrite('./color/all_{}.png'.format(i), image)
+        data = data[:,:,:,0]
+        for i in range(data.shape[2]):
+            image = data[:,:,:]
+            image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+            image = image*255
+            image = image.astype(np.uint8)
+            cv2.imwrite('./generated/{}/real/{}.png'.format(i), image)
         
         for i in range(data.shape[3]):
             image_filename = self.image_paths[i]
@@ -93,7 +93,7 @@ class TestModel(BaseModel):
             image = image*255
             image = image.astype(np.uint8)
             image = image[...,::-1]
-            cv2.imwrite('./generated/{}/test/{}.png'.format(self.dataset_name, write_filename), image)
+            cv2.imwrite('./generated/{}/fake/{}.png'.format(self.dataset_name, write_filename), image)
             self.count+=1
 
     def optimize_parameters(self):
