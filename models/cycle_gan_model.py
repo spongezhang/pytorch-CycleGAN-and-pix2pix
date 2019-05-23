@@ -3,7 +3,7 @@ import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
-
+import numpy as np
 
 class CycleGANModel(BaseModel):
     """
@@ -71,9 +71,9 @@ class CycleGANModel(BaseModel):
         # The naming is different from those used in the paper.
         # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
         self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-                                        not opt.no_dropout, opt.init_type, 'transposed_conv', opt.init_gain, self.gpu_ids)
+                                        not opt.no_dropout, opt.init_type, opt.upsampling, opt.init_gain, self.gpu_ids)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
-                                        not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+                                        not opt.no_dropout, opt.init_type, opt.upsampling, opt.init_gain, self.gpu_ids)
 
         if self.isTrain:  # define discriminators
             self.netD_A = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
@@ -130,8 +130,10 @@ class CycleGANModel(BaseModel):
         # Real
         pred_real = netD(real)
         loss_D_real = self.criterionGAN(pred_real, True)
+        self.pred_real = pred_real
         # Fake
         pred_fake = netD(fake.detach())
+        self.pred_fake = pred_fake
         loss_D_fake = self.criterionGAN(pred_fake, False)
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
@@ -195,3 +197,8 @@ class CycleGANModel(BaseModel):
 
     def compute_visuals(self):
         print(self.fake_B.shape)
+
+    def get_visuals(self):
+        data = self.fake_B.cpu().detach().numpy()
+        data = np.transpose(data, (2, 3, 1, 0))
+        return data
