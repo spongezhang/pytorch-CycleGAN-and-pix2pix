@@ -191,7 +191,6 @@ class BaseModel(ABC):
                 state_dict = torch.load(load_path, map_location=str(self.device))
                 if hasattr(state_dict, '_metadata'):
                     del state_dict._metadata
-                #print(state_dict.keys())
                 net_state_set = set(net.state_dict().keys())
                 #for key in net.state_dict().keys():
                 #    print(key, net.state_dict()[key].shape)
