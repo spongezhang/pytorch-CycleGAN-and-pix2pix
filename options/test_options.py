@@ -20,8 +20,6 @@ class TestOptions(BaseOptions):
         #from detector
         parser.add_argument('--log-dir', default='../splice_log/',
                             help='folder to output log')
-        parser.add_argument('--training-set', default= 'synthesized_journals_2_train',
-                            help='Other options: notredame, yosemite')
         parser.add_argument('--mean-image', type=float, default=0.443728476019,
                             help='mean of train dataset for normalization')
         parser.add_argument('--std-image', type=float, default=0.20197947209,

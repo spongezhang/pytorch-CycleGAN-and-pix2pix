@@ -55,6 +55,8 @@ class BaseOptions():
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
         parser.add_argument('--resize_blur', action='store_true', help='perform resize and blur augmentation')
+        parser.add_argument('--upsampling', type=str, default='transposed_conv', help='visdom server of the web display')
+        parser.add_argument('--n_downsample', default=2, type=int, help='# threads for loading data')
         self.initialized = True
         return parser
 

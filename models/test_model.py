@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import sys
 import os
+import random
 
 class TestModel(BaseModel):
     """ This TesteModel can be used to generate CycleGAN results for only one direction.
@@ -55,10 +56,12 @@ class TestModel(BaseModel):
 
         self.dataset_name = opt.name.split('_')[0] 
         self.count = 0
-        try:
-            os.stat('./generated/{}/real/'.format(self.dataset_name))
-        except:
-            os.makedirs('./generated/{}/real/'.format(self.dataset_name))
+        self.resize_blur = opt.resize_blur
+        if self.resize_blur:
+            try:
+                os.stat('./generated/{}/real/'.format(self.dataset_name))
+            except:
+                os.makedirs('./generated/{}/real/'.format(self.dataset_name))
         try:
             os.stat('./generated/{}/fake/'.format(self.dataset_name))
         except:
@@ -77,10 +80,9 @@ class TestModel(BaseModel):
 
     def forward(self):
         """Run forward pass."""
-        data = self.realA.cpu().numpy()
+        data = self.real_A.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
-        data = data[:,:,:,0]
-        if opt.resize_blur:
+        if self.resize_blur:
             for i in range(data.shape[3]):
                 image_filename = self.image_paths[i]
                 write_filename = image_filename.split('/')[-1]
@@ -90,13 +92,13 @@ class TestModel(BaseModel):
                 image = image*255
                 image = image.astype(np.uint8)
                 image = image[...,::-1]
+                #cv2.imwrite('./generated/{}/real/{}.jpg'.format(self.dataset_name, write_filename), image, [int(cv2.IMWRITE_JPEG_QUALITY),random.choice(quality_list)])
                 cv2.imwrite('./generated/{}/real/{}.png'.format(self.dataset_name, write_filename), image)
                 self.count+=1
             
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
-        data = data[:,:,:,0]
         for i in range(data.shape[3]):
             image_filename = self.image_paths[i]
             write_filename = image_filename.split('/')[-1]
