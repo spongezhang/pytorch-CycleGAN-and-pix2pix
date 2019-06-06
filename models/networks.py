@@ -113,7 +113,7 @@ def init_net(net, model = 'resnet', init_type='normal', init_gain=0.02, gpu_ids=
     return net
 
 
-def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', upsampling_type='transposed_conv', init_gain=0.02, n_downsample=2, gpu_ids=[]):
+def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', upsampling_type='transposed_conv', n_downsample=2, init_gain=0.02,  gpu_ids=[]):
     """Create a generator
 
     Parameters:
@@ -393,7 +393,7 @@ class ResnetGenerator(nn.Module):
     """
 
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False,
-            n_downsample = n_downsample, n_blocks=6, padding_type='reflect', upsampling_type='transposed_conv'):
+            n_downsample = 2, n_blocks=6, padding_type='reflect', upsampling_type='transposed_conv'):
         """Construct a Resnet-based generator
 
         Parameters:
