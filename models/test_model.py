@@ -5,6 +5,7 @@ import cv2
 import sys
 import os
 import random
+import scipy.io as sio
 
 class TestModel(BaseModel):
     """ This TesteModel can be used to generate CycleGAN results for only one direction.
@@ -47,7 +48,8 @@ class TestModel(BaseModel):
         # specify the models you want to save to the disk. The training/test scripts will call <BaseModel.save_networks> and <BaseModel.load_networks>
         self.model_names = ['G' + opt.model_suffix]  # only generator is needed.
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG,
-                                      opt.norm, not opt.no_dropout, opt.init_type, opt.upsampling, opt.init_gain, self.gpu_ids)
+                                      opt.norm, not opt.no_dropout, opt.init_type, opt.upsampling,
+                                              opt.n_downsample, opt.init_gain, self.gpu_ids)
 
         # assigns the model to self.netG_[suffix] so that it can be loaded
         # please see <BaseModel.load_networks>
@@ -92,13 +94,16 @@ class TestModel(BaseModel):
                 image = image*255
                 image = image.astype(np.uint8)
                 image = image[...,::-1]
-                #cv2.imwrite('./generated/{}/real/{}.jpg'.format(self.dataset_name, write_filename), image, [int(cv2.IMWRITE_JPEG_QUALITY),random.choice(quality_list)])
                 cv2.imwrite('./generated/{}/real/{}.png'.format(self.dataset_name, write_filename), image)
                 self.count+=1
             
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
+        #image_filename = self.image_paths[0]
+        #write_filename = image_filename.split('/')[-1]
+        #write_filename = write_filename.split('.')[0]
+        #sio.savemat( './generated/{}/fake/{}.mat'.format(self.dataset_name, write_filename), dict(data=data))
         for i in range(data.shape[3]):
             image_filename = self.image_paths[i]
             write_filename = image_filename.split('/')[-1]

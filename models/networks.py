@@ -386,6 +386,23 @@ def G_conv(incoming, in_channels, out_channels, kernel_size, padding, nonlineari
     else:
         return layers
 
+def G_conv_no_Relu(incoming, in_channels, out_channels, kernel_size, padding, nonlinearity, init, param=None, 
+        to_sequential=True, use_wscale=True, use_batchnorm=False, use_pixelnorm=True):
+    layers = incoming
+    layers += [nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=1, padding=padding)]
+    he_init(layers[-1], init, param)  # init layers
+    if use_wscale:
+        layers += [WScaleLayer(layers[-1])]
+    if use_batchnorm:
+        layers += [nn.BatchNorm2d(out_channels)]
+    if use_pixelnorm:
+        layers += [PixelNormLayer()]
+    if to_sequential:
+        return nn.Sequential(*layers)
+    else:
+        return layers
+
+
 class ResnetGenerator(nn.Module):
     """Resnet-based generator that consists of Resnet blocks between a few downsampling/upsampling operations.
 
@@ -426,7 +443,6 @@ class ResnetGenerator(nn.Module):
 
         mult = 2 ** n_downsampling
         for i in range(n_blocks):       # add ResNet blocks
-
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
         for i in range(n_downsampling):  # add upsampling layers
@@ -448,7 +464,7 @@ class ResnetGenerator(nn.Module):
                 act = nn.LeakyReLU(negative_slope=negative_slope) 
                 iact = 'leaky_relu'
                 layers = G_conv(layers, ic, oc, 3, 1, act, iact, negative_slope, False, True, False, True)
-                net = G_conv(layers, oc, oc, 3, 1, act, iact, negative_slope, True, True, False, True)
+                net = G_conv_no_Relu(layers, oc, oc, 3, 1, act, iact, negative_slope, True, True, False, True)
                 model.append(net)
 
         if upsampling_type == 'transposed_conv':
