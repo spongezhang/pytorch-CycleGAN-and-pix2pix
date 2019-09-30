@@ -30,7 +30,6 @@ import os
 from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
-from util.visualizer import save_images
 from util import html
 
 

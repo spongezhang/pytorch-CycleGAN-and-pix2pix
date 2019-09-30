@@ -22,7 +22,6 @@ import time
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
-from util.visualizer import Visualizer
 import numpy as np
 import cv2
 import os
@@ -62,17 +61,17 @@ if __name__ == '__main__':
             model.set_input(data)         # unpack data from dataset and apply preprocessing
             model.optimize_parameters()   # calculate loss functions, get gradients, update network weights
 
-            if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
-                save_result = total_iters % opt.update_html_freq == 0
-                images = model.get_visuals()
-                for j in range(images.shape[3]):
-                    image = images[:,:,:,j]
-                    image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
-                    image = image*255
-                    image = image.astype(np.uint8)
-                    image = image[...,::-1]
-                    cv2.imwrite('./{}/{:04d}_{:04d}.png'.format(opt.write_dir, epoch,epoch_iter), image)
-                    break
+            #if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
+            #    save_result = total_iters % opt.update_html_freq == 0
+            #    images = model.get_visuals()
+            #    for j in range(images.shape[3]):
+            #        image = images[:,:,:,j]
+            #        image = (image-np.amin(np.amin(image)))/(np.amax(np.amax(image))-np.amin(np.amin(image)))
+            #        image = image*255
+            #        image = image.astype(np.uint8)
+            #        image = image[...,::-1]
+            #        cv2.imwrite('./{}/{:04d}_{:04d}.png'.format(opt.write_dir, epoch,epoch_iter), image)
+            #        break
                 #visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk

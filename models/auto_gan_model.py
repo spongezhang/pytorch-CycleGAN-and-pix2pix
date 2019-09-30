@@ -1,3 +1,21 @@
+#!/usr/bin/python
+#-*- coding: utf-8 -*- 
+#===========================================================
+#  File Name: auto_gan_model.py
+#  Author: Xu Zhang, Columbia University
+#  Creation Date: 09-07-2019
+#  Last Modified: Fri Sep 20 17:54:53 2019
+#
+#  Usage:
+#  Description: Model for AutoGAN 
+#
+#  Copyright (C) 2019 Xu Zhang
+#  All rights reserved.
+# 
+#  This file is made available under
+#  the terms of the BSD license (see the COPYING file).
+#===========================================================
+
 import torch
 import itertools
 from util.image_pool import ImagePool
@@ -19,6 +37,7 @@ class AutoGANModel(BaseModel):
         Parameters:
             opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
+        #Only have one loop
         BaseModel.__init__(self, opt)
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         self.loss_names = ['D_A', 'G_A', 'idt']
@@ -33,8 +52,6 @@ class AutoGANModel(BaseModel):
             self.model_names = ['G_A']
 
         # define networks (both Generators and discriminators)
-        # The naming is different from those used in the paper.
-        # Code (vs. paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
         self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                         not opt.no_dropout, opt.init_type, opt.upsampling,
                                         opt.n_downsample, opt.init_gain, self.gpu_ids)
@@ -104,7 +121,7 @@ class AutoGANModel(BaseModel):
 
     def backward_G(self):
         lambda_idt = self.opt.lambda_identity
-        """Calculate the loss for generators G_A and G_B"""
+        """Calculate the loss for generators G_A"""
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_A), True)
         
@@ -116,12 +133,12 @@ class AutoGANModel(BaseModel):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         # forward
         self.forward()      # compute fake images and reconstruction images.
-        # G_A and G_B
+        # G_A 
         self.set_requires_grad([self.netD_A], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_G.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
         self.optimizer_G.step()       # update G_A and G_B's weights
-        # D_A and D_B
+        # D_A 
         self.set_requires_grad([self.netD_A], True)
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
         self.backward_D_A()      # calculate gradients for D_A

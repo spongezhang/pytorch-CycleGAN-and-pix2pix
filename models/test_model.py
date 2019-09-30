@@ -56,18 +56,25 @@ class TestModel(BaseModel):
         setattr(self, 'netG' + opt.model_suffix, self.netG)  # store netG in self.
         
 
-        self.dataset_name = opt.name.split('_')[0] 
+        self.save_name = opt.save_name 
+
+        self.subset_name = opt.dataroot.split('/')[-1] 
+        if self.subset_name == 'testC':
+            self.subset_name = 'testA'
+        if self.subset_name == 'trainC':
+            self.subset_name = 'trainA'
+
         self.count = 0
         self.resize_blur = opt.resize_blur
         if self.resize_blur:
             try:
-                os.stat('./generated/{}/real/'.format(self.dataset_name))
+                os.stat('./generated/{}/real/'.format(self.save_name))
             except:
-                os.makedirs('./generated/{}/real/'.format(self.dataset_name))
+                os.makedirs('./generated/{}/real/'.format(self.save_name))
         try:
-            os.stat('./generated/{}/fake/'.format(self.dataset_name))
+            os.stat('./generated/{}/{}/'.format(self.save_name, self.subset_name))
         except:
-            os.makedirs('./generated/{}/fake/'.format(self.dataset_name))
+            os.makedirs('./generated/{}/{}/'.format(self.save_name, self.subset_name))
 
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
@@ -94,16 +101,13 @@ class TestModel(BaseModel):
                 image = image*255
                 image = image.astype(np.uint8)
                 image = image[...,::-1]
-                cv2.imwrite('./generated/{}/real/{}.png'.format(self.dataset_name, write_filename), image)
+                cv2.imwrite('./generated/{}/real/{}.png'.format(self.save_name, write_filename), image)
                 self.count+=1
             
         self.fake_B = self.netG(self.real_A)  # G(A)
         data = self.fake_B.cpu().numpy()
         data = np.transpose(data, (2, 3, 1, 0))
-        #image_filename = self.image_paths[0]
-        #write_filename = image_filename.split('/')[-1]
-        #write_filename = write_filename.split('.')[0]
-        #sio.savemat( './generated/{}/fake/{}.mat'.format(self.dataset_name, write_filename), dict(data=data))
+
         for i in range(data.shape[3]):
             image_filename = self.image_paths[i]
             write_filename = image_filename.split('/')[-1]
@@ -113,7 +117,7 @@ class TestModel(BaseModel):
             image = image*255
             image = image.astype(np.uint8)
             image = image[...,::-1]
-            cv2.imwrite('./generated/{}/fake/{}.png'.format(self.dataset_name, write_filename), image)
+            cv2.imwrite('./generated/{}/{}/{}.png'.format(self.save_name, self.subset_name, write_filename), image)
             self.count+=1
 
     def optimize_parameters(self):
